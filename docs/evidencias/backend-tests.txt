@@ -1,0 +1,90 @@
+Eventia · 21/10/2026 · PostgreSQL 18
+
+test_eventia')...
+Found 34 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: messages, rest_framework, staticfiles
+  Apply all migrations: admin, auth, contenttypes, events, notifications, registrations, sessions, token_blacklist, users
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying users.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying events.0001_initial... OK
+  Applying events.0002_initial... OK
+  Applying registrations.0001_initial... OK
+  Applying notifications.0001_initial... OK
+  Applying notifications.0002_initial... OK
+  Applying registrations.0002_initial... OK
+  Applying sessions.0001_initial... OK
+  Applying token_blacklist.0001_initial... OK
+  Applying token_blacklist.0002_outstandingtoken_jti_hex... OK
+  Applying token_blacklist.0003_auto_20171017_2007... OK
+  Applying token_blacklist.0004_auto_20171017_2013... OK
+  Applying token_blacklist.0005_remove_outstandingtoken_jti... OK
+  Applying token_blacklist.0006_auto_20171017_2113... OK
+  Applying token_blacklist.0007_auto_20171017_2214... OK
+  Applying token_blacklist.0008_migrate_to_bigautofield... OK
+  Applying token_blacklist.0010_fix_migrate_to_bigautofield... OK
+  Applying token_blacklist.0011_linearizes_history... OK
+  Applying token_blacklist.0012_alter_outstandingtoken_user... OK
+  Applying token_blacklist.0013_alter_blacklistedtoken_options_and_more...test_capacity_cannot_shrink_below_confirmed_registrations (tests.test_mvp.MVPTests.test_capacity_cannot_shrink_below_confirmed_registrations) ... ok
+test_capacity_future_date_and_category_validation (tests.test_mvp.MVPTests.test_capacity_future_date_and_category_validation) ... ok
+test_csrf_required_on_cookie_auth_endpoints (tests.test_mvp.MVPTests.test_csrf_required_on_cookie_auth_endpoints) ... ok
+test_draft_and_past_events_do_not_allow_registration (tests.test_mvp.MVPTests.test_draft_and_past_events_do_not_allow_registration) ... ok
+test_draft_is_private_even_for_other_organizer (tests.test_mvp.MVPTests.test_draft_is_private_even_for_other_organizer) ... ok
+test_duplicate_email_case_insensitive (tests.test_mvp.MVPTests.test_duplicate_email_case_insensitive) ... ok
+test_duplicate_registration_and_database_uniqueness (tests.test_mvp.MVPTests.test_duplicate_registration_and_database_uniqueness) ... ok
+test_email_failure_preserves_registration_and_records_failure (tests.test_mvp.MVPTests.test_email_failure_preserves_registration_and_records_failure) ... Fallo de confirmación 1: RuntimeError
+ok
+test_event_rejects_owner_status_and_other_unknown_fields (tests.test_mvp.MVPTests.test_event_rejects_owner_status_and_other_unknown_fields) ... ok
+test_explicit_manage_all_permission_allows_other_event_edit (tests.test_mvp.MVPTests.test_explicit_manage_all_permission_allows_other_event_edit) ... ok
+test_full_event_does_not_register_or_notify (tests.test_mvp.MVPTests.test_full_event_does_not_register_or_notify) ... ok
+test_invalid_identifiers_return_404 (tests.test_mvp.MVPTests.test_invalid_identifiers_return_404) ... ok
+test_login_and_wrong_credentials_generic_response (tests.test_mvp.MVPTests.test_login_and_wrong_credentials_generic_response) ... ok
+test_login_five_failures_block_for_fifteen_minutes (tests.test_mvp.MVPTests.test_login_five_failures_block_for_fifteen_minutes) ... ok
+test_login_uses_case_insensitive_email_for_admin_created_accounts (tests.test_mvp.MVPTests.test_login_uses_case_insensitive_email_for_admin_created_accounts) ... ok
+test_non_object_json_is_rejected_without_server_error (tests.test_mvp.MVPTests.test_non_object_json_is_rejected_without_server_error) ... ok
+test_only_authorized_organizer_creates_draft_with_server_owner (tests.test_mvp.MVPTests.test_only_authorized_organizer_creates_draft_with_server_owner) ... ok
+test_only_own_registrations_are_listed_and_others_return_404 (tests.test_mvp.MVPTests.test_only_own_registrations_are_listed_and_others_return_404) ... ok
+test_owner_edits_other_organizer_denied (tests.test_mvp.MVPTests.test_owner_edits_other_organizer_denied) ... ok
+test_owner_without_publish_permission_cannot_publish (tests.test_mvp.MVPTests.test_owner_without_publish_permission_cannot_publish) ... ok
+test_pagination_keeps_search_and_category (tests.test_mvp.MVPTests.test_pagination_keeps_search_and_category) ... ok
+test_private_routes_require_authentication (tests.test_mvp.MVPTests.test_private_routes_require_authentication) ... ok
+test_public_only_discovers_upcoming_published_events_and_search (tests.test_mvp.MVPTests.test_public_only_discovers_upcoming_published_events_and_search) ... ok
+test_publish_requires_permission_and_ownership (tests.test_mvp.MVPTests.test_publish_requires_permission_and_ownership) ... ok
+test_refresh_rotation_replay_and_logout (tests.test_mvp.MVPTests.test_refresh_rotation_replay_and_logout) ... ok
+test_registration_hashes_password_and_defaults_to_participant (tests.test_mvp.MVPTests.test_registration_hashes_password_and_defaults_to_participant) ... ok
+test_registration_identity_cannot_be_supplied_by_client (tests.test_mvp.MVPTests.test_registration_identity_cannot_be_supplied_by_client) ... ok
+test_registration_rejects_privileged_fields (tests.test_mvp.MVPTests.test_registration_rejects_privileged_fields) ... ok
+test_rollback_does_not_send_confirmation (tests.test_mvp.MVPTests.test_rollback_does_not_send_confirmation) ... ok
+test_staff_label_alone_does_not_grant_creation (tests.test_mvp.MVPTests.test_staff_label_alone_does_not_grant_creation) ... ok
+test_started_event_cannot_be_edited (tests.test_mvp.MVPTests.test_started_event_cannot_be_edited) ... ok
+test_successful_registration_updates_availability_and_sends_after_commit (tests.test_mvp.MVPTests.test_successful_registration_updates_availability_and_sends_after_commit) ... ok
+test_weak_password_and_empty_fields_rejected (tests.test_mvp.MVPTests.test_weak_password_and_empty_fields_rejected) ... ok
+test_two_connections_compete_for_last_spot (tests.test_mvp.ConcurrentRegistrationTests.test_two_connections_compete_for_last_spot) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 17.771s
+
+OK
+Destroying test database for alias 'default' ('test_eventia')...
+ OK
+System check identified no issues (0 silenced).

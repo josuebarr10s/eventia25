@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -13,10 +14,27 @@ if not SECRET_KEY:
     raise ImproperlyConfigured(
         "Configura DJANGO_SECRET_KEY en .env; consulta README.md."
     )
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    "CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
-).split(",")
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,.vercel.app").split(",")
+    if h.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://*.vercel.app",
+    ).split(",")
+    if o.strip()
+]
+for _vercel_host_var in ("VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
+    _vh = os.getenv(_vercel_host_var, "").strip()
+    if _vh:
+        if _vh not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_vh)
+        _origin = f"https://{_vh}"
+        if _origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_origin)
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -56,17 +74,38 @@ TEMPLATES = [
         },
     }
 ]
-DATABASES = {
-    "default": {
+
+
+def _build_default_database():
+    db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+    if db_url:
+        parsed = urlparse(db_url)
+        query = parse_qs(parsed.query)
+        options = {}
+        if "sslmode" in query:
+            options["sslmode"] = query["sslmode"][0]
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(parsed.path.lstrip("/")),
+            "USER": unquote(parsed.username or ""),
+            "PASSWORD": unquote(parsed.password or ""),
+            "HOST": parsed.hostname or "127.0.0.1",
+            "PORT": str(parsed.port or 5432),
+            "CONN_MAX_AGE": 0,
+            **({"OPTIONS": options} if options else {}),
+        }
+    return {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "eventia"),
-        "USER": os.getenv("POSTGRES_USER", "eventia"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
-        "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "NAME": os.getenv("POSTGRES_DB", os.getenv("PGDATABASE", "eventia")),
+        "USER": os.getenv("POSTGRES_USER", os.getenv("PGUSER", "eventia")),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", os.getenv("PGPASSWORD", "")),
+        "HOST": os.getenv("POSTGRES_HOST", os.getenv("PGHOST", "127.0.0.1")),
+        "PORT": os.getenv("POSTGRES_PORT", os.getenv("PGPORT", "5432")),
         "CONN_MAX_AGE": 0,
     }
-}
+
+
+DATABASES = {"default": _build_default_database()}
 AUTH_USER_MODEL = "users.User"
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -120,6 +159,7 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = not DEBUG
 SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG

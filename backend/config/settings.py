@@ -1,3 +1,4 @@
+import hashlib
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -8,8 +9,16 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / ".env")
+IS_VERCEL = bool(os.getenv("VERCEL"))
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "").strip()
+if not SECRET_KEY and IS_VERCEL:
+    seed = (
+        os.getenv("VERCEL_PROJECT_ID")
+        or os.getenv("VERCEL_GIT_REPO_SLUG")
+        or "eventia25-vercel"
+    )
+    SECRET_KEY = "vercel-" + hashlib.sha256(f"eventia-secret-{seed}".encode()).hexdigest()
 if not SECRET_KEY:
     raise ImproperlyConfigured(
         "Configura DJANGO_SECRET_KEY en .env; consulta README.md."
@@ -93,6 +102,15 @@ def _build_default_database():
             "PORT": str(parsed.port or 5432),
             "CONN_MAX_AGE": 0,
             **({"OPTIONS": options} if options else {}),
+        }
+    has_explicit_pg = any(
+        os.getenv(k)
+        for k in ("POSTGRES_HOST", "PGHOST", "POSTGRES_PASSWORD", "PGPASSWORD")
+    )
+    if IS_VERCEL and not has_explicit_pg:
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "/tmp/eventia.sqlite3",
         }
     return {
         "ENGINE": "django.db.backends.postgresql",

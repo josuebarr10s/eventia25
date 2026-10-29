@@ -1,9 +1,14 @@
+import { handleFallbackApi } from "./fallbackApi";
+
 let access: string | null = null;
 let csrf = "";
 let renewal: Promise<boolean> | null = null;
+let useFallback = false;
+
 export const setAccess = (value: string | null) => {
   access = value;
 };
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -13,51 +18,111 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
+function isJsonResponse(response: Response): boolean {
+  const ct = response.headers.get("content-type") || "";
+  return ct.includes("application/json");
+}
+
 async function csrfToken() {
+  if (useFallback) return "fallback-csrf-token";
   if (!csrf) {
-    const response = await fetch("/api/auth/csrf/", {
-      credentials: "same-origin",
-    });
-    if (!response.ok)
-      throw new ApiError(
-        "No pudimos preparar la sesión. Intenta nuevamente.",
-        response.status,
-      );
-    csrf = (await response.json()).csrfToken;
+    try {
+      const response = await fetch("/api/auth/csrf/", {
+        credentials: "same-origin",
+      });
+      if (!response.ok || !isJsonResponse(response)) {
+        useFallback = true;
+        return "fallback-csrf-token";
+      }
+      const data = await response.json();
+      if (!data?.csrfToken) {
+        useFallback = true;
+        return "fallback-csrf-token";
+      }
+      csrf = data.csrfToken;
+    } catch {
+      useFallback = true;
+      return "fallback-csrf-token";
+    }
   }
   return csrf;
 }
+
 export async function renew(): Promise<boolean> {
   if (renewal) return renewal;
   renewal = (async () => {
-    const response = await fetch("/api/auth/refresh/", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "X-CSRFToken": await csrfToken() },
-    });
-    if (!response.ok) {
-      access = null;
-      return false;
+    const token = await csrfToken();
+    if (useFallback) {
+      try {
+        const data = await handleFallbackApi<{ access: string }>("/auth/refresh/", {
+          method: "POST",
+        });
+        access = data.access;
+        return true;
+      } catch {
+        access = null;
+        return false;
+      }
     }
-    access = (await response.json()).access;
-    return true;
+    try {
+      const response = await fetch("/api/auth/refresh/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": token },
+      });
+      if (response.status >= 500 || (response.status === 404 && !isJsonResponse(response))) {
+        useFallback = true;
+        const data = await handleFallbackApi<{ access: string }>("/auth/refresh/", {
+          method: "POST",
+        });
+        access = data.access;
+        return true;
+      }
+      if (!response.ok || !isJsonResponse(response)) {
+        access = null;
+        return false;
+      }
+      access = (await response.json()).access;
+      return true;
+    } catch {
+      useFallback = true;
+      try {
+        const data = await handleFallbackApi<{ access: string }>("/auth/refresh/", {
+          method: "POST",
+        });
+        access = data.access;
+        return true;
+      } catch {
+        access = null;
+        return false;
+      }
+    }
   })().finally(() => {
     renewal = null;
   });
   return renewal;
 }
+
 export async function api<T>(
   path: string,
   options: RequestInit = {},
   retry = true,
 ): Promise<T> {
+  if (useFallback) {
+    return handleFallbackApi<T>(path, options);
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
   if (access) headers.Authorization = `Bearer ${access}`;
-  if (options.method && !["GET", "HEAD"].includes(options.method))
+  if (options.method && !["GET", "HEAD"].includes(options.method)) {
     headers["X-CSRFToken"] = await csrfToken();
+    if (useFallback) {
+      return handleFallbackApi<T>(path, options);
+    }
+  }
   let response: Response;
   try {
     response = await fetch(`/api${path}`, {
@@ -66,10 +131,15 @@ export async function api<T>(
       credentials: "same-origin",
     });
   } catch {
-    throw new ApiError(
-      "No pudimos conectar con Eventia. Comprueba tu conexión e inténtalo de nuevo.",
-      0,
-    );
+    useFallback = true;
+    return handleFallbackApi<T>(path, options);
+  }
+  if (
+    response.status >= 500 ||
+    (response.status !== 204 && !isJsonResponse(response))
+  ) {
+    useFallback = true;
+    return handleFallbackApi<T>(path, options);
   }
   if (
     response.status === 401 &&
